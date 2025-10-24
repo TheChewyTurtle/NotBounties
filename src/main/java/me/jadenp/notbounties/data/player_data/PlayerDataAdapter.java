@@ -70,37 +70,56 @@ public class PlayerDataAdapter extends TypeAdapter<PlayerData> {
             jsonReader.nextNull();
             return null;
         }
-        jsonReader.beginObject();
+
         PlayerData playerData = new PlayerData();
-        while (jsonReader.hasNext()) {
-            String name = jsonReader.nextName();
-            switch (name) {
-                case "playerName" -> {
-                    if (jsonReader.peek() == JsonToken.NULL) {
-                        jsonReader.nextNull();
-                    } else {
-                        playerData.setPlayerName(jsonReader.nextString());
+
+        try {
+            jsonReader.beginObject();
+            while (jsonReader.hasNext()) {
+                try {
+                    String name = jsonReader.nextName();
+                    switch (name) {
+                        case "playerName" -> {
+                            if (jsonReader.peek() == JsonToken.NULL) {
+                                jsonReader.nextNull();
+                            } else {
+                                playerData.setPlayerName(jsonReader.nextString());
+                            }
+                        }
+                        case "uuid" -> playerData.setUuid(UUID.fromString(jsonReader.nextString()));
+                        case "immunity" -> readImmunity(jsonReader, playerData);
+                        case "timeZone" -> playerData.setTimeZone(TimeZone.getTimeZone(jsonReader.nextString()));
+                        case "refundAmount" -> playerData.addRefund(new AmountRefund(jsonReader.nextDouble(), null)); // old data since 1.22.0
+                        case "refundItems" -> playerData.addRefund(new ItemRefund(jsonReader.nextString(), null)); // old data since 1.22.0
+                        case "refunds" -> readRefund(jsonReader, playerData);
+                        case "disableBroadcast" -> readBroadcast(jsonReader, playerData);
+                        case "rewardHeads" -> readRewardHeads(jsonReader, playerData); // old data since 1.22.0
+                        case "bountyCooldown" -> playerData.setBountyCooldown(jsonReader.nextLong());
+                        case "whitelist" -> playerData.setWhitelist(new WhitelistTypeAdapter().read(jsonReader));
+                        case "newPlayer" -> playerData.setNewPlayer(jsonReader.nextBoolean());
+                        case "lastSeen" -> playerData.setLastSeen(jsonReader.nextLong());
+                        case "lastClaim" -> playerData.setLastClaim(jsonReader.nextLong());
+                        case "serverID" -> playerData.setServerID(UUID.fromString(jsonReader.nextString()));
+                        default -> // unexpected name
+                                jsonReader.skipValue();
                     }
-                }
-                case "uuid" -> playerData.setUuid(UUID.fromString(jsonReader.nextString()));
-                case "immunity" -> readImmunity(jsonReader, playerData);
-                case "timeZone" -> playerData.setTimeZone(TimeZone.getTimeZone(jsonReader.nextString()));
-                case "refundAmount" -> playerData.addRefund(new AmountRefund(jsonReader.nextDouble(), null)); // old data since 1.22.0
-                case "refundItems" -> playerData.addRefund(new ItemRefund(jsonReader.nextString(), null)); // old data since 1.22.0
-                case "refunds" -> readRefund(jsonReader, playerData);
-                case "disableBroadcast" -> readBroadcast(jsonReader, playerData);
-                case "rewardHeads" -> readRewardHeads(jsonReader, playerData); // old data since 1.22.0
-                case "bountyCooldown" -> playerData.setBountyCooldown(jsonReader.nextLong());
-                case "whitelist" -> playerData.setWhitelist(new WhitelistTypeAdapter().read(jsonReader));
-                case "newPlayer" -> playerData.setNewPlayer(jsonReader.nextBoolean());
-                case "lastSeen" -> playerData.setLastSeen(jsonReader.nextLong());
-                case "lastClaim" -> playerData.setLastClaim(jsonReader.nextLong());
-                case "serverID" -> playerData.setServerID(UUID.fromString(jsonReader.nextString()));
-                default -> // unexpected name
+                } catch (Exception e) {
+                    // Skip malformed field and continue reading
+                    Bukkit.getLogger().warning("Skipping malformed field in player data for " +
+                        (playerData.getPlayerName() != null ? playerData.getPlayerName() : "unknown") + ": " + e.getMessage());
+                    try {
                         jsonReader.skipValue();
+                    } catch (Exception ignored) {}
+                }
             }
+            jsonReader.endObject();
+        } catch (Exception e) {
+            // Handle truncated/malformed JSON - return partial player data
+            Bukkit.getLogger().warning("Player data file is truncated or malformed for " +
+                (playerData.getPlayerName() != null ? playerData.getPlayerName() : "unknown") +
+                ", loading with partial data: " + e.getMessage());
         }
-        jsonReader.endObject();
+
         if (playerData.getServerID() == null)
             playerData.setServerID(DataManager.GLOBAL_SERVER_ID);
         return playerData;

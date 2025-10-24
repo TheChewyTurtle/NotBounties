@@ -238,6 +238,7 @@ public final class NotBounties extends JavaPlugin {
             BountyManager.checkDelayedBountyClaim();
         }, 120, 40);
         // auto save bounties & do some ram cleaning
+        long autoSaveInterval = Math.max(1, ConfigOptions.getAutoSaveInterval()); // Ensure interval is at least 1 minute
         getServerImplementation().async().runAtFixedRate(() -> {
             if (paused)
                 return;
@@ -251,7 +252,7 @@ public final class NotBounties extends JavaPlugin {
                 getLogger().severe("Error autosaving saving data!");
                 getLogger().severe(e.toString());
             }
-        }, ConfigOptions.getAutoSaveInterval() * 60 * 20L + 69, ConfigOptions.getAutoSaveInterval() * 60 * 20L);
+        }, autoSaveInterval * 60 * 20L + 69, autoSaveInterval * 60 * 20L);
 
 
         // this needs to be in a 5-minute interval cuz that's the lowest time specified in the config for expiration
