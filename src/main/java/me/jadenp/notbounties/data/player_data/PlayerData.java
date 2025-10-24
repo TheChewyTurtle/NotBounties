@@ -228,6 +228,10 @@ public class PlayerData extends Inconsistent implements Comparable<PlayerData> {
     }
 
     public BroadcastSettings getBroadcastSettings() {
+        // Return default if null (for backward compatibility with old player data)
+        if (broadcastSettings == null) {
+            broadcastSettings = ConfigOptions.getMoney().getDefaultBroadcastSetting();
+        }
         return broadcastSettings;
     }
 

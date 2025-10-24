@@ -107,29 +107,48 @@ public class PlayerDataAdapter extends TypeAdapter<PlayerData> {
     }
 
     private void readRefund(JsonReader jsonReader, PlayerData playerData) throws IOException {
-        jsonReader.beginArray();
-        while (jsonReader.hasNext()) {
-            jsonReader.beginObject();
-            String type = jsonReader.nextName();
-            try {
-                Class<?> clazz = Class.forName(type);
-                if (OnlineRefund.class.isAssignableFrom(clazz)) {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends OnlineRefund> refundClass = (Class<? extends OnlineRefund>) clazz;
-                    playerData.addRefund(PlayerData.readRefund(jsonReader, refundClass));
-
-                } else {
-                    Bukkit.getLogger().warning("Found an invalid refund class: " + type + " for player " + playerData.getPlayerName());
-                    jsonReader.skipValue();
-                }
-
-            } catch (ClassNotFoundException e) {
-                Bukkit.getLogger().warning("Could not find refund class: " + type + " for player " + playerData.getPlayerName());
-                jsonReader.skipValue();
+        try {
+            // Check for null value first
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return;
             }
-            jsonReader.endObject();
+
+            jsonReader.beginArray();
+            while (jsonReader.hasNext()) {
+                try {
+                    jsonReader.beginObject();
+                    String type = jsonReader.nextName();
+                    try {
+                        Class<?> clazz = Class.forName(type);
+                        if (OnlineRefund.class.isAssignableFrom(clazz)) {
+                            @SuppressWarnings("unchecked")
+                            Class<? extends OnlineRefund> refundClass = (Class<? extends OnlineRefund>) clazz;
+                            playerData.addRefund(PlayerData.readRefund(jsonReader, refundClass));
+
+                        } else {
+                            Bukkit.getLogger().warning("Found an invalid refund class: " + type + " for player " + playerData.getPlayerName());
+                            jsonReader.skipValue();
+                        }
+
+                    } catch (ClassNotFoundException e) {
+                        Bukkit.getLogger().warning("Could not find refund class: " + type + " for player " + playerData.getPlayerName());
+                        jsonReader.skipValue();
+                    }
+                    jsonReader.endObject();
+                } catch (Exception e) {
+                    // Skip malformed refund entries
+                    Bukkit.getLogger().warning("Skipping malformed refund entry for player " + playerData.getPlayerName() + ": " + e.getMessage());
+                    try {
+                        jsonReader.skipValue();
+                    } catch (Exception ignored) {}
+                }
+            }
+            jsonReader.endArray();
+        } catch (Exception e) {
+            // Handle truncated/malformed JSON gracefully
+            Bukkit.getLogger().warning("Failed to read refunds for player " + playerData.getPlayerName() + ", initializing with empty refunds: " + e.getMessage());
         }
-        jsonReader.endArray();
     }
 
     private void readBroadcast(JsonReader jsonReader, PlayerData playerData) throws IOException {
