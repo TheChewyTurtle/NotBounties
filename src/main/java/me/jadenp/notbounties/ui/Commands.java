@@ -1930,6 +1930,11 @@ public class Commands implements CommandExecutor, TabCompleter {
                                         try {
                                             if (NumberFormatting.getManualEconomy() != ManualEconomy.PARTIAL)
                                                 NumberFormatting.doRemoveCommands(parser, finalTotal, new ArrayList<>());
+                                            // Deposit the tax portion to the government
+                                            double taxPortion = finalAmount * ConfigOptions.getMoney().getBountyTax();
+                                            if (taxPortion > 0) {
+                                                GovernmentTaxHelper.depositBountyTax(taxPortion);
+                                            }
                                             addBounty(parser, player, finalAmount, items, whitelist);
                                             reopenBountiesGUI();
                                         } catch (NotEnoughCurrencyException e) {

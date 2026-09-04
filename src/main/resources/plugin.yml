@@ -25,6 +25,7 @@ softdepend:
   - SimpleClans
   - packetevents
   - Skript
+  - IronOrders
 commands:
   notbounties:
     description: Use all of the bounty commands.

@@ -482,6 +482,8 @@ public class BountyManager {
                 builder.replace(builder.length() - 2, builder.length(), "");
                 if (totalLoss > 0) {
                     NotBounties.debugMessage("Removing " + totalLoss + " currency for the death tax.", false);
+                    // Deposit death tax to government account
+                    GovernmentTaxHelper.depositDeathTax(bounty.getTotalDisplayBounty(killer) * deathTax);
                     player.sendMessage(parse(getPrefix() + LanguageOptions.getMessage("death-tax").replace("{items}", (builder.toString())), player));
                     // modify drops
                     if (forceEditDrops)

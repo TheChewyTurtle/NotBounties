@@ -178,6 +178,14 @@
             <version>1.7.1</version>
             <scope>provided</scope>
         </dependency>
+        <!-- IronOrders API (optional - for government tax deposits) -->
+        <dependency>
+            <groupId>com.ironcladmc</groupId>
+            <artifactId>IronOrders</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>net.essentialsx</groupId>
             <artifactId>EssentialsX</artifactId>
