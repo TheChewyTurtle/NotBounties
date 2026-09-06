@@ -28,7 +28,7 @@ Recommended procedure on a live server:
 | `userdata/*.yml` `claimed-bounties` | player stat `kills` |
 | `userdata/*.yml` `successful-bounties` | player stat `set` |
 | leaderboard caches + `usercache.json` names | `logged-players` name cache |
-| `inactive-bounty-removal` | `config.yml` `bounty-expire.time` (hours -> days) |
+| `inactive-bounty-removal` | `config.yml` `bounty-expire.time` only with `--map-expiry`; default is -1 (never expire) |
 | `claim-restrictions.own-bounties` | `config.yml` `setter-claim-own` (inverted) |
 | `drop-head.creator/killer` | `config.yml` `reward-heads.setters/claimed` |
 | `bounty-set-restriction` | `settings/immunity.yml` `bounty-cooldown` |

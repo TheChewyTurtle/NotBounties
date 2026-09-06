@@ -19,12 +19,14 @@ What it produces
 Usage
   python bountyhunters_to_notbounties.py <BountyHunters dir> <NotBounties dir>
         [--usercache <server>/usercache.json] [--jar NotBounties.jar]
-        [--no-config] [--dry-run]
+        [--no-config] [--map-expiry] [--dry-run]
 
   --usercache  Improves UUID->name mapping (BountyHunters only caches names for
                players on its leaderboards).
   --jar        If the NotBounties folder has never been generated, default
                config files are extracted from this jar before editing.
+  --map-expiry Convert inactive-bounty-removal into an expiry. Off by default:
+               bounties never expire unless you ask for it.
   --dry-run    Print what would change, write nothing.
 
 Stat mapping (BountyHunters -> NotBounties)
@@ -374,19 +376,24 @@ def get(d, *path, default=None):
     return cur
 
 
-def plan_config_changes(bh):
+def plan_config_changes(bh, map_expiry=False):
     """Return list of (file, key-path, value, explanation) and list of unmapped notes."""
     changes = []
     notes = []
 
     # config.yml
-    if get(bh, "inactive-bounty-removal", "enabled") is True:
-        hours = float(get(bh, "inactive-bounty-removal", "time", default=0) or 0)
-        if hours > 0:
-            changes.append(("config.yml", ["bounty-expire", "time"], round(hours / 24.0, 4),
-                            "inactive-bounty-removal.time %g h -> %g days" % (hours, hours / 24.0)))
+    # Expiry is opt-in: by default bounties never expire in NotBounties (bounty-expire.time = -1),
+    # regardless of BountyHunters' inactive-bounty-removal. Pass --map-expiry to convert it.
+    if map_expiry:
+        if get(bh, "inactive-bounty-removal", "enabled") is True:
+            hours = float(get(bh, "inactive-bounty-removal", "time", default=0) or 0)
+            if hours > 0:
+                changes.append(("config.yml", ["bounty-expire", "time"], round(hours / 24.0, 4),
+                                "inactive-bounty-removal.time %g h -> %g days" % (hours, hours / 24.0)))
+        else:
+            changes.append(("config.yml", ["bounty-expire", "time"], -1, "inactive-bounty-removal disabled"))
     else:
-        changes.append(("config.yml", ["bounty-expire", "time"], -1, "inactive-bounty-removal disabled"))
+        changes.append(("config.yml", ["bounty-expire", "time"], -1, "bounties never expire (default; use --map-expiry to convert inactive-bounty-removal)"))
     own = get(bh, "claim-restrictions", "own-bounties")
     if own is not None:
         changes.append(("config.yml", ["setter-claim-own"], not own,
@@ -520,6 +527,7 @@ def main():
     ap.add_argument("--usercache", help="path to the server's usercache.json for UUID->name mapping")
     ap.add_argument("--jar", help="NotBounties jar, used to extract default config files if missing")
     ap.add_argument("--no-config", action="store_true", help="only convert data, do not touch NotBounties config")
+    ap.add_argument("--map-expiry", action="store_true", help="convert inactive-bounty-removal into bounty-expire.time (default: bounties never expire)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -582,7 +590,7 @@ def main():
         lines.append("Config migration skipped (--no-config).")
         notes = []
     else:
-        changes, notes = plan_config_changes(bh_config)
+        changes, notes = plan_config_changes(bh_config, args.map_expiry)
         lines.append("Config changes:")
         lines.extend("  " + r for r in apply_config_changes(nb_dir, changes, args.jar, args.dry_run))
     lines.append("")
