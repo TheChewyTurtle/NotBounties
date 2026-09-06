@@ -377,15 +377,20 @@ public final class NotBounties extends JavaPlugin {
 
     private static void readVersion(Plugin plugin) {
         try {
-            // get the text version - ex: 1.20.3
-            String fullServerVersion = Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf("-"));
-            fullServerVersion = fullServerVersion.substring(2); // remove the '1.' in the version
-            if (fullServerVersion.contains(".")) {
-                // get the subversion - ex: 3
-                serverSubVersion = Integer.parseInt(fullServerVersion.substring(fullServerVersion.indexOf(".") + 1));
-                fullServerVersion = fullServerVersion.substring(0, fullServerVersion.indexOf(".")); // remove the subversion
+            // get the text version - ex: 1.20.3 (pre-2026) or 26.2 (year-based versions from Minecraft 26.1 on)
+            String bukkitVersion = Bukkit.getBukkitVersion();
+            int dash = bukkitVersion.indexOf("-");
+            String fullServerVersion = dash >= 0 ? bukkitVersion.substring(0, dash) : bukkitVersion;
+            String[] parts = fullServerVersion.split("[.]");
+            if (parts[0].equals("1")) {
+                // legacy 1.X.Y -> major X, sub Y
+                serverVersion = Integer.parseInt(parts[1]);
+                serverSubVersion = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            } else {
+                // year-based YY.X[.Y] -> major YY (always newer than any 1.X), sub X
+                serverVersion = Integer.parseInt(parts[0]);
+                serverSubVersion = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
             }
-            serverVersion = Integer.parseInt(fullServerVersion);
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             plugin.getLogger().warning("Could not get the server version. Some features may not function properly.");
             serverVersion = 20;

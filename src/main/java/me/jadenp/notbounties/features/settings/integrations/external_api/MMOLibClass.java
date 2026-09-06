@@ -107,12 +107,15 @@ public class MMOLibClass implements Listener {
             }
             ModifierType modifierType;
             if (configuration.getBoolean("multiplicative")) {
+                // ADDITIVE_MULTIPLIER only exists in some MythicLib versions; look it up by name so this
+                // compiles and runs against any version, falling back to RELATIVE.
+                ModifierType resolved = null;
                 try {
-                    modifierType = ModifierType.ADDITIVE_MULTIPLIER;
-                } catch (NoSuchFieldError e){
-                    // not using latest version of MMOLib
-                    modifierType = ModifierType.RELATIVE;
+                    resolved = ModifierType.valueOf("ADDITIVE_MULTIPLIER");
+                } catch (IllegalArgumentException | NoSuchFieldError e) {
+                    // not available in this MythicLib version
                 }
+                modifierType = resolved != null ? resolved : ModifierType.RELATIVE;
             } else {
                 modifierType = ModifierType.FLAT;
             }
