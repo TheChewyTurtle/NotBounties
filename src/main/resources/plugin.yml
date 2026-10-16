@@ -1,7 +1,7 @@
 name: NotBounties
 version: '${project.version}'
 main: me.jadenp.notbounties.NotBounties
-api-version: 1.13
+api-version: '26.3'
 authors: [ Not_Jaden ]
 description: kill...
 folia-supported: true
