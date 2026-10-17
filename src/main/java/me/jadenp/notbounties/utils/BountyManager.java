@@ -62,7 +62,18 @@ public class BountyManager {
     private BountyManager(){}
 
     public static void listBounties(CommandSender sender, int page) {
+        if (page < 0) {
+            sender.sendMessage("Page number must be a positive integer.");
+            return;
+        }
         GUIOptions guiOptions = GUI.getGUI("bounty-gui");
+        int sortType = Objects.requireNonNull(guiOptions).getSortType();
+        List<Bounty> sortedList = getAllBounties(sortType);
+        int pageCount = Math.max(1, (sortedList.size() - 1) / BOUNTY_LIST_LENGTH + 1);
+        if (page >= pageCount) {
+            sender.sendMessage("Page number must be between 1 and " + pageCount + ".");
+            return;
+        }
         String title = "";
         if (guiOptions != null) {
             title = guiOptions.getName();
@@ -70,18 +81,14 @@ public class BountyManager {
                 title += " " + (page + 1);
         }
         sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "               " + ChatColor.RESET + " " + title + " " + ChatColor.GRAY + ChatColor.STRIKETHROUGH + "               ");
-        int sortType = Objects.requireNonNull(GUI.getGUI("bounty-gui")).getSortType();
-        List<Bounty> sortedList = getAllBounties(sortType);
-        for (int i = page * BOUNTY_LIST_LENGTH; i < (page * BOUNTY_LIST_LENGTH) + BOUNTY_LIST_LENGTH; i++) {
-            if (sortedList.size() > i) {
-                sender.sendMessage(parse(getMessage("list-total"), sortedList.get(i).getTotalDisplayBounty(), Bukkit.getOfflinePlayer(sortedList.get(i).getUUID())));
-            } else {
-                break;
-            }
+        int first = page * BOUNTY_LIST_LENGTH;
+        int end = first + Math.min(BOUNTY_LIST_LENGTH, sortedList.size() - first);
+        for (int i = first; i < end; i++) {
+            sender.sendMessage(parse(getMessage("list-total"), sortedList.get(i).getTotalDisplayBounty(), Bukkit.getOfflinePlayer(sortedList.get(i).getUUID())));
         }
 
         TextComponent rightArrow = new TextComponent(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "⋙⋙⋙");
-        rightArrow.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + ConfigOptions.getPluginBountyCommands().get(0) + " list " + page + 2));
+        rightArrow.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + ConfigOptions.getPluginBountyCommands().get(0) + " list " + (page + 2)));
         rightArrow.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(net.md_5.bungee.api.ChatColor.of(new Color(232, 26, 225)) + "Next Page")));
         TextComponent leftArrow = new TextComponent(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "⋘⋘⋘");
         leftArrow.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + ConfigOptions.getPluginBountyCommands().get(0) + " list " + page));
@@ -98,7 +105,7 @@ public class BountyManager {
         }
         start.addExtra(space);
         start.addExtra(titleFill);
-        if (sortedList.size() > (page * BOUNTY_LIST_LENGTH) + BOUNTY_LIST_LENGTH) {
+        if (page + 1 < pageCount) {
             start.addExtra(rightArrow);
         } else {
             start.addExtra(replacement);

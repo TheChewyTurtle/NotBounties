@@ -72,6 +72,11 @@ public enum Leaderboard {
         }
     }
 
+    /** Send an explicit player's stats to the command's actual sender, including console. */
+    public void sendStats(OfflinePlayer statOwner, CommandSender receiver, boolean shorten) {
+        receiver.sendMessage(parseStats(getPrefix() + getStatMsg(shorten), statOwner));
+    }
+
 
     public String getFormattedStat(UUID uuid){
         if (money) {

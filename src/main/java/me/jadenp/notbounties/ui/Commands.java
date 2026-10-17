@@ -588,6 +588,11 @@ public class Commands implements CommandExecutor, TabCompleter {
                     return false;
                 }
                 if (args.length == 1) {
+                    if (!(sender instanceof Player)) {
+                        if (!silent)
+                            sender.sendMessage("Console usage: /notbounties stat <leaderboard> <player>");
+                        return false;
+                    }
                     Leaderboard.ALL.displayStats(parser, false);
                     return true;
                 }
@@ -614,7 +619,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 if (args.length == 2) {
                     if (!(sender instanceof Player)) {
                         if (!silent)
-                            sender.sendMessage("Only players can use this command!");
+                            sender.sendMessage("Console usage: /notbounties stat <leaderboard> <player>");
                         return false;
                     }
                     leaderboard.displayStats(parser, false);
@@ -627,7 +632,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         return false;
                     }
                     if (args.length == 3) {
-                        leaderboard.displayStats(Bukkit.getOfflinePlayer(playerUUID), parser, true);
+                        leaderboard.sendStats(Bukkit.getOfflinePlayer(playerUUID), sender, true);
                         return true;
                     }
                     // admin part to edit or setValue
@@ -1130,9 +1135,16 @@ public class Commands implements CommandExecutor, TabCompleter {
                     if (args.length > 1) {
                         try {
                             page = Integer.parseInt(args[1]);
-                        } catch (NumberFormatException ignored) {
-
+                        } catch (NumberFormatException invalidPage) {
+                            if (!silent)
+                                sender.sendMessage("Page number must be a positive integer.");
+                            return false;
                         }
+                    }
+                    if (page < 1) {
+                        if (!silent)
+                            sender.sendMessage("Page number must be a positive integer.");
+                        return false;
                     }
                     listBounties(sender, page - 1);
                 } else {
